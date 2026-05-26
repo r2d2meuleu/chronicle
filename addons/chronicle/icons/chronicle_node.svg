@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <!-- Timeline bar -->
+  <rect x="2" y="7" width="11" height="2" rx="0.5" fill="white"/>
+  <!-- Tick mark 1 (left) -->
+  <rect x="4.5" y="5" width="1" height="6" rx="0.5" fill="white"/>
+  <!-- Tick mark 2 (center) -->
+  <rect x="8" y="5" width="1" height="6" rx="0.5" fill="white"/>
+  <!-- Current state dot (rightmost) -->
+  <circle cx="12.5" cy="8" r="2.5" fill="white"/>
+  <!-- Rollback arrow (downward chevron) -->
+  <path d="M11 12 L12.5 14 L14 12" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
