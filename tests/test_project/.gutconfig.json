@@ -1,0 +1,9 @@
+{
+    "dirs": ["res://test"],
+    "prefix": "test_",
+    "suffix": ".gd",
+    "log_level": 1,
+    "include_subdirs": true,
+    "should_exit": true,
+    "failure_error_types": ["engine"]
+}

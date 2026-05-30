@@ -57,9 +57,9 @@ const _SNAP_OLD_TRANSIENT: int = 5
 ## Pass to preserve a fact's existing expiry unchanged.
 const KEEP_LIFETIME: float = -2.0
 const STORE_WARN_THRESHOLD: int = 10000
-const STORE_WARN_INTERVAL: int = 5000
 
 var _store: ChronicleStore
+var _store_warned: bool = false
 var _key_codec: ChronicleKeyCodec
 var _timeline: ChronicleTimeline
 var _watch_bus: ChronicleWatchBus
@@ -212,9 +212,9 @@ func _mutate_state(raw_key: String, value: Variant, transient: bool, lifetime: f
 		value = null
 	else:
 		_store.set_value(norm_key, value)
-		var store_size: int = _store.size()
-		if store_size >= STORE_WARN_THRESHOLD and store_size % STORE_WARN_INTERVAL == 0:
-			_warn_fn.call("Store has %d facts." % store_size)
+		if not _store_warned and _store.size() >= STORE_WARN_THRESHOLD:
+			_store_warned = true
+			_warn_fn.call("Store has %d+ facts. This is a one-time warning." % STORE_WARN_THRESHOLD)
 		if transient:
 			_store.set_transient(norm_key, true)
 		else:
@@ -360,6 +360,7 @@ func clear() -> void:
 	_expiring_norm_key = ""
 	_cascade_dedup_stack.clear()
 	_active_erase_source = EraseSource.USER
+	_store_warned = false
 
 
 func write_expiry(raw_key: String, lifetime: float) -> bool:

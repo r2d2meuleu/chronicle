@@ -1,5 +1,4 @@
 .godot/
 *.uid
 addons/gut/
-tests/
 *.import
