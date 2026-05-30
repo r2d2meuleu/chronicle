@@ -299,11 +299,30 @@ func erase(raw_key: String) -> bool:
 
 
 func erase_batch(keys: Array[String]) -> int:
+	# When deferred (cascade depth / protected mode), apply_write returns false for each
+	# erase even though the facts exist and WILL be erased on drain — counting those as 0
+	# violates the documented contract. So defer the WHOLE batch (like write_batch) and
+	# return the count of requested keys that exist NOW (= the count that will be erased).
+	if _must_defer():
+		var deferred_count: int = 0
+		for key: String in keys:
+			var norm_key: String = _key_codec.validate_and_normalize(key)
+			if not norm_key.is_empty() and _store.has(norm_key):
+				deferred_count += 1
+		_try_defer(_apply_erase_batch_internal.bind(keys.duplicate()), "erase_facts()")
+		return deferred_count
 	var count: int = 0
 	for key: String in keys:
 		if erase(key):
 			count += 1
 	return count
+
+
+## Drains a deferred erase_facts() batch: erases each raw key (re-normalized + validated
+## by the erase path), executed immediately because the drain runs outside a deferring mode.
+func _apply_erase_batch_internal(keys: Array[String]) -> void:
+	for key: String in keys:
+		erase(key)
 
 
 func is_idle() -> bool:

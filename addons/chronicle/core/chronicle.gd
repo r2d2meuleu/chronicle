@@ -189,7 +189,8 @@ func set_facts(entries: Dictionary, transient: bool = false,
 
 
 ## Returns the number of facts that existed and were erased. Not atomic — watchers fire between each erasure.
-## [br][b]Note:[/b] The count may be lower than expected when called at cascade depth (deferred erases return 0).
+## [br][b]Note:[/b] When called at cascade depth (>= MAX_CASCADE_DEPTH) the batch is deferred, but the returned
+## count still reflects the requested keys that exist NOW and will be erased during the deferred drain.
 func erase_facts(keys: Array[String]) -> int:
 	if keys.is_empty():
 		return 0

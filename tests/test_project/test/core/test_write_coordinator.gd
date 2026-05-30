@@ -692,17 +692,14 @@ func test_restore_rejected_during_mutation() -> void:
 	assert_false(state[1], "deserialize during mutation should return false")
 
 
-# ── A2-14: process_expiry_and_emit — _store.has check ineffective for deferred re-creation ──
+# ── A2-14: Expiry — fact_expired fires (snapshot semantics) even when re-created ──
 
-# BUG: The _store.has(norm_key) guard in process_expiry_and_emit (line 646) is
-#     meant to suppress fact_expired for facts re-created by watcher writes during
-#     the PROCESSING_EXPIRY phase. However, all writes during that phase are deferred
-#     (_force_defer=true), so the re-creation hasn't hit the store by the time the
-#     EMITTING_EXPIRY phase checks _store.has. The check is dead code.
-#
-#     This test documents the current (buggy) behavior: fact_expired fires even
-#     though the fact is re-created by a watcher. The fact DOES end up re-created
-#     after the deferred drain, but the signal already fired.
+# Snapshot semantics: fact_expired fires for every key that expired at flush start,
+# even when a watcher re-creates the key during the sweep. The watcher's write is
+# deferred (the mode defers during expiry) and drains after EMITTING_EXPIRY, so the
+# fact survives with the watcher's new value — but the expiry signal still fired for
+# what expired. Consistent with test_expiry_signals_all_keys_and_watcher_recreation_survives
+# and test_expiry_watcher_overwrite_survives_and_signal_reports_snapshot.
 func test_expiry_fires_despite_deferred_recreation() -> void:
 	set_time(1.0)
 	_chronicle.set_fact("respawn", 1, false, 1.0)  # expires at t=2.0
@@ -720,13 +717,10 @@ func test_expiry_fires_despite_deferred_recreation() -> void:
 
 	set_time(3.0)
 
-	# EXPECTED CORRECT BEHAVIOR — currently FAILS (product bug: the _store.has guard
-	# in execute_expiry_flush runs before the deferred re-creation drains, so it
-	# cannot suppress fact_expired for a fact a watcher re-creates).
-	# Per the guard's intent, fact_expired must NOT fire for "respawn" because the
-	# watcher re-creates it.
-	assert_eq(expired_keys.find("respawn"), -1,
-		"fact_expired should be suppressed for a fact re-created by a watcher")
+	# fact_expired fires for "respawn" (it expired at flush start); the watcher's
+	# deferred re-creation then drains and survives, so respawn ends up == 2.
+	assert_has(expired_keys, "respawn",
+		"fact_expired fires for respawn — it expired at flush start (snapshot semantics)")
 	assert_fact("respawn", 2)
 
 

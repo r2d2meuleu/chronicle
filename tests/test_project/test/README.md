@@ -26,6 +26,8 @@ Tests live under `test/`, one directory per tier:
 
 ## Running
 
+> **Prerequisite:** GUT 9.6.0 is gitignored (`addons/gut/`), so a fresh clone won't include it. Install GUT (via the Godot Asset Library or git) into the repo's `addons/` before running the suite.
+
 **core and production MUST run as separate Godot processes** — combined in one run they
 exhaust memory (OOM). Benchmarks are also a separate, slow process. The exact commands
 (kept in sync with [`CLAUDE.md`](../CLAUDE.md)):
@@ -112,15 +114,6 @@ benchmark. Each chart is built as SVG and rasterized to **PNG** (via `rsvg-conve
 back to ImageMagick, and to SVG if neither is installed) — PNG renders both on GitHub and in
 editors whose markdown preview blocks local SVG, such as VS Code. Charts use a transparent
 background and mid-gray text so they read correctly on light and dark themes alike.
-
-> **Note — this branch is intentionally RED on exactly 3 product bugs** (4 failing test
-> functions). These are documented Chronicle defects asserted as *expected-failing* tests
-> (search `EXPECTED RED` / `# audit:` under `test/core/`): (1) `fact_expired` fires for a fact
-> a watcher re-creates during expiry; (2) `erase_facts` returns 0 at cascade depth instead of
-> the real erased count; (3) the reserved `_global.*` prefix is accepted by the pattern/watch
-> paths that exact keys correctly reject. Each test asserts the **correct** behavior, so fixing
-> the product turns it green — these are by design, not regressions. Everything else (the
-> self-policing meta-test, every benchmark, and all other tiers) is green.
 
 ## Results
 

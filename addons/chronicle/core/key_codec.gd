@@ -57,13 +57,20 @@ func validate_and_normalize(raw_key: String) -> String:
 	return norm
 
 
+## Returns true if a user-supplied key or pattern targets the reserved internal
+## "_global" namespace. Exact keys, watch patterns, and query patterns are all held
+## to this rule so users cannot read/watch Chronicle's internal global facts.
+static func is_reserved(raw: String) -> bool:
+	return raw == "_global" or raw.begins_with("_global.")
+
+
 ## Returns an error message string, or "" if valid.
 ## Rejects the reserved "_global." prefix — use for user-supplied keys only.
 static func validate_key(raw_key: String) -> String:
 	var err: String = validate_key_syntax(raw_key)
 	if not err.is_empty():
 		return err
-	if raw_key == "_global" or raw_key.begins_with("_global."):
+	if is_reserved(raw_key):
 		return "reserved internal prefix \"_global\" — use keys without a namespace (e.g. \"health\" not \"_global.health\")"
 	return ""
 
@@ -123,6 +130,10 @@ func denormalize(norm_key: String) -> String:
 
 
 func validate_watch_pattern(pattern: String) -> String:
+	# Reserved-prefix guard applies to patterns too (consistent with exact keys via
+	# validate_key) — a wildcard like "_global.*" must not expose internal global facts.
+	if is_reserved(pattern):
+		return "reserved internal prefix \"_global\" — patterns must not target the internal global namespace"
 	if "*" not in pattern:
 		return validate_key(pattern)
 	var validate: Callable = _validate_pattern_fn if _validate_pattern_fn.is_valid() else ChroniclePatternMatcher.validate
@@ -136,6 +147,10 @@ func normalize_pattern(pattern: String) -> String:
 		push_error("[Chronicle] Pattern \"%s\" contains uppercase characters. Keys and patterns must be lowercase." % pattern)
 		return ""
 	if "*" in pattern:
+		# Reserved-prefix guard (consistent with exact keys / validate_watch_pattern).
+		if is_reserved(pattern):
+			_warn_fn.call("Invalid query pattern \"%s\": reserved internal prefix \"_global\"" % pattern)
+			return ""
 		var validate: Callable = _validate_pattern_fn if _validate_pattern_fn.is_valid() else ChroniclePatternMatcher.validate
 		var err: String = validate.call(pattern)
 		if not err.is_empty():

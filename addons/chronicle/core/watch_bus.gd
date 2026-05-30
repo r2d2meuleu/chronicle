@@ -91,7 +91,7 @@ func watch_any(patterns: Array[String], callback: Callable, once: bool = false) 
 	var errors: Array[String] = []
 	for pat: String in patterns:
 		if "*" in pat:
-			var err: String = _validate_pattern_fn.call(pat)
+			var err: String = _key_codec.validate_watch_pattern(pat)
 			if not err.is_empty():
 				errors.append("'%s': %s" % [pat, err])
 		else:
@@ -324,8 +324,10 @@ func _register_pattern(id: int, pattern: String, callback: Callable, once: bool)
 
 
 func _register_glob(id: int, pattern: String, callback: Callable, once: bool) -> bool:
-	var err_result: Variant = _validate_pattern_fn.call(pattern)
-	var err: String = err_result if err_result is String else ""
+	# Validate through the codec's unified pattern validator so glob watches honor the
+	# same reserved-prefix rule as exact keys (e.g. "_global.*" is rejected, watch -> -1),
+	# in addition to the pattern-matcher syntax check it delegates to.
+	var err: String = _key_codec.validate_watch_pattern(pattern)
 	if not err.is_empty():
 		_warn_fn.call("watch() invalid glob pattern \"%s\": %s" % [pattern, err])
 		return false
